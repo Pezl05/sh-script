@@ -89,7 +89,7 @@ echo "Download Harbor successful !!"
 echo -e "==================================================================================================================== \n\n"
 
 # Genarate Certificate 
-echo "Download Harbor Installer ..."
+echo "Genarate Certificate Harbor ..."
 if [[ "$HARBOR_GEN_CERT" == true ]]; then
     if [ ! -f $HARBOR_NGINX_KEY ] && [ ! -f $HARBOR_NGINX_CERT ]; then
         openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout $HARBOR_NGINX_KEY -out $HARBOR_NGINX_CERT -subj "/C=TH/ST=Bangkok/L=Dindaeng/O=Sirisoft/OU=Software Engineer/CN=$HARBOR_HOST_NAME"
