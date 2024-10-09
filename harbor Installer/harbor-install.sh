@@ -21,7 +21,14 @@ if ! command -v docker &> /dev/null; then
         echo "Install yum-utils successful !!"
         echo -e "==================================================================================================================== \n\n"
 
-        sudo yum-config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
+        if grep -i "centos" /etc/redhat-release > /dev/null; then
+            sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+        elif grep -i "red hat" /etc/redhat-release > /dev/null; then
+            sudo yum-config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
+        else
+            echo "Unsupported OS detected."
+            exit 1
+        fi
 
         # Install the Docker packages:
         echo "Docker Installing ..."
