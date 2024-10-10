@@ -87,11 +87,12 @@ FILE_HARBOR=$(basename "$HARBOR_LOAD_URL")
 if [[ ! -f $FILE_HARBOR ]]; then
     wget $HARBOR_LOAD_URL
 fi
-if [ -d "harbor" ]; then
-    mv harbor harbor-bak
+if [ -d "$HARBOR_PATH/harbor" ]; then
+    mv $HARBOR_PATH/harbor $HARBOR_PATH/harbor-bak
     echo "Backup Harbor directory !!"
 fi
 tar -xvzf $FILE_HARBOR
+mv $FILE_HARBOR $HARBOR_PATH/
 echo "Download Harbor successful !!"
 echo -e "==================================================================================================================== \n\n"
 
@@ -109,21 +110,21 @@ fi
 
 # Configure Harbor file
 echo "Configure Harbor file ..."
-cp ./harbor/harbor.yml.tmpl ./harbor/harbor.yml
-sudo sed -i "s|hostname: .*|hostname: $HARBOR_HOST_NAME|" ./harbor/harbor.yml
-sudo sed -i "s|certificate: .*|certificate: $HARBOR_NGINX_CERT|" ./harbor/harbor.yml
-sudo sed -i "s|private_key: .*|private_key: $HARBOR_NGINX_KEY|" ./harbor/harbor.yml
-sudo sed -i "s|harbor_admin_password: .*|harbor_admin_password: $HARBOR_ADMIN_PASSWORD|" ./harbor/harbor.yml
-sudo sed -i "s|password: root123|password: $HARBOR_DATABASE_PASSWORD|" ./harbor/harbor.yml
-sudo sed -i "s|data_volume: .*|data_volume: $HARBOR_DATA_VOLUME|" ./harbor/harbor.yml
+cp $HARBOR_PATH/harbor/harbor.yml.tmpl $HARBOR_PATH/harbor/harbor.yml
+sudo sed -i "s|hostname: .*|hostname: $HARBOR_HOST_NAME|" $HARBOR_PATH/harbor/harbor.yml
+sudo sed -i "s|certificate: .*|certificate: $HARBOR_NGINX_CERT|" $HARBOR_PATH/harbor/harbor.yml
+sudo sed -i "s|private_key: .*|private_key: $HARBOR_NGINX_KEY|" $HARBOR_PATH/harbor/harbor.yml
+sudo sed -i "s|harbor_admin_password: .*|harbor_admin_password: $HARBOR_ADMIN_PASSWORD|" $HARBOR_PATH/harbor/harbor.yml
+sudo sed -i "s|password: root123|password: $HARBOR_DATABASE_PASSWORD|" $HARBOR_PATH/harbor/harbor.yml
+sudo sed -i "s|data_volume: .*|data_volume: $HARBOR_DATA_VOLUME|" $HARBOR_PATH/harbor/harbor.yml
 echo -e "==================================================================================================================== \n\n"
 
 # Install Harbor
 echo "Harbor Installing ..."
 if [[ "$HARBOR_ENABLE_TRIVY" == true ]]; then
-    ./harbor/install.sh --with-trivy
+    $HARBOR_PATH/harbor/install.sh --with-trivy
 else
-    ./harbor/install.sh
+    $HARBOR_PATH/harbor/install.sh
 fi
 
 # Create File Service
@@ -135,7 +136,7 @@ Requires=docker.service
 After=docker.service
 
 [Service]
-WorkingDirectory=$PWD/harbor
+WorkingDirectory=$HARBOR_PATH/harbor
 ExecStart=/bin/docker compose up
 ExecStop=/bin/docker compose down
 TimeoutStartSec=0
@@ -149,7 +150,7 @@ fi
 
 # Configure Common
 echo "Configure Common file ..."
-cat <<EOF > $PWD/harbor/common/config/log/logrotate.conf
+cat <<EOF > $HARBOR_PATH/harbor/common/config/log/logrotate.conf
 /var/log/docker/*.log {
         daily
         rotate $HARBOR_ROTATE
@@ -163,7 +164,7 @@ cat <<EOF > $PWD/harbor/common/config/log/logrotate.conf
 EOF
 
 # Set Time Zone
-echo -e "\nTZ=Asia/Bangkok" >> $PWD/harbor/common/config/db/env
+echo -e "\nTZ=Asia/Bangkok" >> $HARBOR_PATH/harbor/common/config/db/env
 
 sudo systemctl daemon-reload
 sudo systemctl enable harbor.service

@@ -41,12 +41,12 @@ if ! command -v java &> /dev/null; then
     if [[ -f /etc/redhat-release ]]; then
 
         sudo yum update
-        sudo yum install java-$NEXUS_JAVA_VERSION-openjdk tar wget nc
+        sudo yum install -y java-$NEXUS_JAVA_VERSION-openjdk tar wget nc
 
     elif [[ -f /etc/lsb-release || -f /etc/debian_version ]]; then
 
         sudo apt update
-        sudo apt install openjdk-$NEXUS_JAVA_VERSION-jdk openjdk-$NEXUS_JAVA_VERSION-jre tar wget netcat-openbsd
+        sudo apt install -y openjdk-$NEXUS_JAVA_VERSION-jdk openjdk-$NEXUS_JAVA_VERSION-jre tar wget netcat-openbsd
 
     else
         echo "Cannot determine the operating system !!!"
@@ -81,8 +81,8 @@ FILE_NEXUS=$(basename "$NEXUS_LOAD_URL")
 if [[ ! -f $FILE_NEXUS ]]; then
     wget $NEXUS_LOAD_URL
 fi
-if [ -d "nexus" ]; then
-    mv nexus nexus-bak
+if [ -d "$NEXUS_PATH/nexus" ]; then
+    mv $NEXUS_PATH/nexus $NEXUS_PATH/nexus-bak
     echo "Backup Nexus directory !!"
 fi
 tar -xvzf $FILE_NEXUS
