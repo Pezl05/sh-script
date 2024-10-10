@@ -33,8 +33,6 @@ if ! command -v docker &> /dev/null; then
         # Install the Docker packages:
         echo "Docker Installing ..."
         sudo yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-        sudo systemctl enable docker
-        sudo systemctl start docker
 
     elif [[ -f /etc/lsb-release || -f /etc/debian_version ]]; then
 
@@ -65,6 +63,8 @@ if ! command -v docker &> /dev/null; then
         exit 1
     fi
 fi
+sudo systemctl enable docker
+sudo systemctl start docker
 echo "Installation Docker successful !!!"
 echo -e "==================================================================================================================== \n\n"
 
@@ -125,28 +125,6 @@ if [[ "$HARBOR_ENABLE_TRIVY" == true ]]; then
 else
     ./harbor/install.sh
 fi
-echo "Install Harbor successful !!"
-echo -e "==================================================================================================================== \n\n"
-
-# Configure Common
-echo "Configure Common file ..."
-cat <<EOF > $PWD/harbor/common/config/log/logrotate.conf
-/var/log/docker/*.log {
-        daily
-        rotate $HARBOR_ROTATE
-        copytruncate
-        compress
-        missingok
-        notifempty
-        dateext
-        dateformat -%Y%m%d
-}
-EOF
-echo "Logrotate ... ✔"
-
-# Set Time Zone
-echo -e "\nTZ=Asia/Bangkok" >> $PWD/harbor/common/config/db/env
-echo "Time Zone ... ✔"
 
 # Create File Service
 if [ ! -f /etc/systemd/system/harbor.service ]; then
@@ -169,11 +147,34 @@ WantedBy=multi-user.target
 EOF
 fi 
 
-echo "File Systemd ... ✔"
+# Configure Common
+echo "Configure Common file ..."
+cat <<EOF > $PWD/harbor/common/config/log/logrotate.conf
+/var/log/docker/*.log {
+        daily
+        rotate $HARBOR_ROTATE
+        copytruncate
+        compress
+        missingok
+        notifempty
+        dateext
+        dateformat -%Y%m%d
+}
+EOF
+
+# Set Time Zone
+echo -e "\nTZ=Asia/Bangkok" >> $PWD/harbor/common/config/db/env
 
 sudo systemctl daemon-reload
 sudo systemctl enable harbor.service
 sudo systemctl restart harbor.service
+
+echo "Install Harbor successful !!"
+echo -e "==================================================================================================================== \n\n"
+
+echo "Logrotate ... ✔"
+echo "Time Zone ... ✔"
+echo "File Systemd ... ✔"
 echo "Start Harbor ... ✔"
 
 echo -e "==================================================================================================================== \n\n"
