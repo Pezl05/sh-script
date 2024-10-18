@@ -17,7 +17,7 @@ if ! command -v docker &> /dev/null; then
 
         # Set up the repository for RHEL
         echo "Yum-utils Installing ..."
-        sudo yum install -y yum-utils tar wget
+        sudo yum install -y yum-utils
         echo "Install yum-utils successful !!"
         echo -e "==================================================================================================================== \n\n"
 
@@ -39,7 +39,7 @@ if ! command -v docker &> /dev/null; then
         # Add Docker's official GPG key for Ubuntu
         echo "Add Docker's official GPG key ..."
         sudo apt-get update
-        sudo apt-get install -y ca-certificates curl tar wget
+        sudo apt-get install -y ca-certificates curl
         sudo install -m 0755 -d /etc/apt/keyrings
         sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
         sudo chmod a+r /etc/apt/keyrings/docker.asc
@@ -68,7 +68,7 @@ sudo systemctl start docker
 echo "Installation Docker successful !!!"
 echo -e "==================================================================================================================== \n\n"
 
-# Add Docker's official GPG key for Ubuntu
+# Instal Package
 echo "Install Package manage file harbor ..."
 if [[ -f /etc/redhat-release ]]; then
     sudo yum install -y tar wget
@@ -97,15 +97,75 @@ echo "Download Harbor successful !!"
 echo -e "==================================================================================================================== \n\n"
 
 # Genarate Certificate 
-echo "Genarate Certificate Harbor ..."
 if [[ "$HARBOR_GEN_CERT" == true ]]; then
-    if [ ! -f $HARBOR_NGINX_KEY ] && [ ! -f $HARBOR_NGINX_CERT ]; then
-        openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout $HARBOR_NGINX_KEY -out $HARBOR_NGINX_CERT -subj "/C=TH/ST=Bangkok/L=Dindaeng/O=Sirisoft/OU=Software Engineer/CN=$HARBOR_HOST_NAME"
-        sudo chmod 600 $HARBOR_NGINX_KEY
-        sudo chmod 644 $HARBOR_NGINX_CERT
+
+	echo "Genarate Certificate Harbor ..."
+    if [ ! -f $HARBOR_CA_KEY ]; then
+        openssl genrsa -out $HARBOR_CA_KEY 4096
+        sudo chmod 600 $HARBOR_CA_KEY
+        echo "CA Key created successfully !!"
     else
-        echo "Certificate Files exist !!"
+        echo "CA Key Files exist !!"
     fi
+
+    if [ ! -f $HARBOR_CA_CERT ]; then
+        openssl req -x509 -new -nodes -sha512 -days 365 \
+            -subj "$HARBOR_CERT_SUBJ" \
+            -key $HARBOR_CA_KEY \
+            -out $HARBOR_CA_CERT
+        sudo chmod 644 $HARBOR_CA_CERT
+        echo "CA Cert created successfully !!"
+    else
+        echo "CA Cert Files exist !!"
+    fi    
+
+    if [ ! -f $HARBOR_NGINX_KEY ]; then
+        openssl genrsa -out $HARBOR_NGINX_KEY 4096
+        echo "Software Key created successfully !!"
+    else
+        echo "Software Key Files exist !!"
+    fi
+
+    if [ ! -f $HARBOR_NGINX_CSR ]; then
+        openssl req -sha512 -new \
+            -subj "$HARBOR_CERT_SUBJ" \
+            -key $HARBOR_NGINX_KEY \
+            -out $HARBOR_NGINX_CSR
+        echo "Software CSR created successfully !!"
+    else
+        echo "Software CSR Files exist !!"
+    fi
+
+cat > v3.ext <<-EOF
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1=$HARBOR_CN
+EOF
+
+    if [ ! -f $HARBOR_NGINX_CERT ]; then
+        openssl x509 -req -sha512 -days 365 \
+            -extfile v3.ext \
+            -CA $HARBOR_CA_CERT -CAkey $HARBOR_CA_KEY -CAcreateserial \
+            -in $HARBOR_NGINX_CSR \
+            -out $HARBOR_NGINX_CERT
+        echo "Software CERT created successfully !!"
+    else
+        echo "Software CERT Files exist !!"
+    fi
+
+    if [ ! -f $HARBOR_NGINX_PEM ]; then
+        openssl x509 -inform PEM -in $HARBOR_NGINX_CERT -out $HARBOR_NGINX_PEM
+        echo "Software PEM created successfully !!"
+    else
+        echo "Software PEM Files exist !!"
+    fi
+
+    echo -e "==================================================================================================================== \n\n"
 fi
 
 # Configure Harbor file

@@ -72,7 +72,7 @@ echo -e "=======================================================================
 DB_EXISTS=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='sonarqube'")
 if [ -z "$DB_EXISTS" ]; then
     # Create Database for SonarQube
-    sudo -u postgres createuser sonar
+    sudo -u postgres createuser $SONAR_USER
     sudo -u postgres psql -c "ALTER USER $SONAR_USER WITH ENCRYPTED password '$SONAR_DB_PASSWORD';"
     sudo -u postgres psql -c "CREATE DATABASE sonarqube OWNER $SONAR_USER;"
     sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE sonarqube to $SONAR_USER;"
